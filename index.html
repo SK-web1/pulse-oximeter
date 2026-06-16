@@ -501,7 +501,7 @@
     			activeRowWarningString = "Low Confidence Drop";
 				}
 
-                clinicalAlertsList.push({ type: 'error', msg: statusExplanationMessage });
+                clinicalAlertsList.push({ type: 'error', msg: errorExplanationMessage });
                 activeRowWarningString = `Sensor Fault State Code ${status}`;
 
 				ledRedStatus.textContent = "ON (Sensor Fault Detected)";
