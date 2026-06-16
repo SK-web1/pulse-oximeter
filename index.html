@@ -531,33 +531,8 @@
                 activeRowWarningString = activeFaultsList.length > 0 ? activeFaultsList.join(" + ") : "Sensor Fault Alert";
 
                 ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
-                ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
-                screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
-                screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
             } else {
                 ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
-
-                if (screenMode === 1) {
-                    ledBlueStatus.textContent = "ON (SpO2 View Mode active)";
-                    ledBlueStatus.className = "text-sm font-medium text-sky-400";
-                    screenIndicatorO2.textContent = "Displaying on Hardware Screen";
-                    screenIndicatorO2.className = "text-[10px] bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
-                    screenIndicatorHR.textContent = "Hidden on Hardware Screen";
-                    screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
-                } else {
-                    ledBlueStatus.textContent = "OFF (Heart Rate View Mode active)";
-                    ledBlueStatus.className = "text-sm font-medium text-slate-400";
-                    screenIndicatorHR.textContent = "Displaying on Hardware Screen";
-                    screenIndicatorHR.className = "text-[10px] bg-rose-950/60 text-rose-300 border border-rose-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
-                    screenIndicatorO2.textContent = "Hidden on Hardware Screen";
-                    screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
-                }
-
-                if(hr > 0) {
-                    liveChart.data.datasets[0].data.push(hr);
-                    liveChart.data.datasets[0].data.shift();
-                    liveChart.update();
-                }
 
                 if (hr >= 100) {
                     ledYellowStatus.textContent = "ON (High HR Triggered)"; 
@@ -578,6 +553,30 @@
                     clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Bradycardia limit crossed. Current pulse velocity tracking at ${hr} BPM is below normal bounds.` });
                     if(activeRowWarningString === "System Nominal") activeRowWarningString = "Bradycardia Check Flag";
                 }
+            }
+
+            // UNBOUNDED SCREEN MODE TOGGLE LOGIC (Always updates accurate layout, even during 0-value faults)
+            if (screenMode === 1) {
+                ledBlueStatus.textContent = "ON (SpO2 View Mode active)";
+                ledBlueStatus.className = "text-sm font-medium text-sky-400";
+                screenIndicatorO2.textContent = "Displaying on Hardware Screen";
+                screenIndicatorO2.className = "text-[10px] bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
+                screenIndicatorHR.textContent = "Hidden on Hardware Screen";
+                screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+            } else {
+                ledBlueStatus.textContent = "OFF (Heart Rate View Mode active)";
+                ledBlueStatus.className = "text-sm font-medium text-slate-400";
+                screenIndicatorHR.textContent = "Displaying on Hardware Screen";
+                screenIndicatorHR.className = "text-[10px] bg-rose-950/60 text-rose-300 border border-rose-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
+                screenIndicatorO2.textContent = "Hidden on Hardware Screen";
+                screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+            }
+
+            // Graph engine update check
+            if(hr > 0) {
+                liveChart.data.datasets[0].data.push(hr);
+                liveChart.data.datasets[0].data.shift();
+                liveChart.update();
             }
 
             if(clinicalAlertsList.length > 0) {
