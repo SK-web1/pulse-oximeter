@@ -449,7 +449,7 @@
             simulationInterval = setInterval(() => {
                 const rng = Math.random();
                 let sHR, sO2, sConf, sStatus, sScreen;
-                if(rng < 0.12) { sHR = 72; sO2 = 0; sConf = 84; sStatus = 1; sScreen = 0; } 
+                if(rng < 0.12) { sHR = 0; sO2 = 0; sConf = 45; sStatus = 1; sScreen = 0; } 
                 else if (rng > 0.88) { sHR = 112; sO2 = 91; sConf = 98; sStatus = 3; sScreen = 1; } 
                 else { 
                     sHR = Math.floor(Math.random() * (85 - 65 + 1)) + 65; 
@@ -488,7 +488,7 @@
 
                 let activeFaultsList = [];
 
-                // 1. Check for Zero Value Dropouts
+                // 1. Check for Zero Value Dropouts independently
                 if (hr === 0 || o2 === 0) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
@@ -502,8 +502,8 @@
                     clinicalAlertsList.push({ 
                         type: 'error', 
                         msg: "SENSOR WARNING (Status 2): Device searching for clear vital rhythms. Keep finger resting steadily." 
-                });
-                activeFaultsList.push("Acquiring Pulse");
+                    });
+                    activeFaultsList.push("Acquiring Pulse");
                 } else if (status === 1) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
@@ -514,12 +514,12 @@
                     clinicalAlertsList.push({ 
                         type: 'error', 
                         msg: "SENSOR WARNING (Status 0): Optical circuit path registering absolute dropout. Finger detached completely." 
-                });
+                    });
                     activeFaultsList.push("Finger Detached");
                 }
 
                 // 3. Check for Low Confidence independently
-                if (confidence <= 95 && status !== 0) {
+                if (confidence <= 95) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
                         msg: `SENSOR WARNING: Low statistical reading confidence (${confidence}%). Data stream unverified.` 
@@ -528,7 +528,7 @@
                 }
 
                 // Combine all active faults into a nice summary string for the Ledger row
-                activeRowWarningString = activeFaultsList.join(" + ");
+                activeRowWarningString = activeFaultsList.length > 0 ? activeFaultsList.join(" + ") : "Sensor Fault Alert";
 
                 ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
                 ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
@@ -592,7 +592,7 @@
             } else { warningPanel.classList.replace('flex', 'hidden'); }
 
             let currentTimeStamp = Date.now();
-            if(currentTimeStamp - lastLedgerLogTime >= 5000 && (hr > 0 || o2 > 0)) {
+            if(currentTimeStamp - lastLedgerLogTime >= 5000 && (hr > 0 || o2 > 0 || activeRowWarningString !== "System Nominal")) {
                 let localTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 let vitalSnapshotObject = { time: localTimeString, bpm: hr, spo2: o2, diagLog: activeRowWarningString };
                 ledgerHistoryData.push(vitalSnapshotObject);
