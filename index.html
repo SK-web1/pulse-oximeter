@@ -479,14 +479,27 @@
             let clinicalAlertsList = [];
             let activeRowWarningString = "System Nominal";
 
-            if (status !== 3 && confidence <= 95) {
+            if (status !== 3 || confidence <= 95 || hr === 0 || o2 === 0) {
                 ledRedStatus.textContent = "ON (Sensor Fault Detected)";
                 ledRedStatus.className = "text-base font-bold text-rose-500 animate-pulse";
 
-                let statusExplanationMessage = "";
-                if (status === 2) statusExplanationMessage = "SENSOR WARNING (Status 2): Device searching for clear vital rhythms. Keep finger resting steadily.";
-                else if (status === 1) statusExplanationMessage = "SENSOR WARNING (Status 1): High signal noise detected. Ambient light leak or movement artifacts active.";
-                else statusExplanationMessage = "SENSOR WARNING (Status 0): Optical circuit path registering absolute dropout. Finger detached completely.";
+                let errorExplanationMessage = "";
+		if (hr === 0 || o2 === 0) {
+    		errorExplanationMessage = "CRITICAL DATA FAULT: Sensor reporting impossible zero value metrics. Realignment required.";
+    		activeRowWarningString = "Zero Value Dropout";
+		} else if (status === 2) {
+    		errorExplanationMessage = "SENSOR WARNING (Status 2): Device searching for clear vital rhythms. Keep finger resting steadily.";
+    		activeRowWarningString = "Acquiring Pulse";
+		} else if (status === 1) {
+    		errorExplanationMessage = "SENSOR WARNING (Status 1): High signal noise detected. Ambient light leak or movement artifacts active.";
+    		activeRowWarningString = "High Noise Drift";
+		} else if (status === 0) {
+    		errorExplanationMessage = "SENSOR WARNING (Status 0): Optical circuit path registering absolute dropout. Finger detached completely.";
+    		activeRowWarningString = "Finger Detached";
+		} else if (confidence <= 95) {
+    		errorExplanationMessage = `SENSOR WARNING: Low statistical reading confidence (${confidence}%). Data stream unverified.`;
+    		activeRowWarningString = "Low Confidence Drop";
+		}
 
                 clinicalAlertsList.push({ type: 'error', msg: statusExplanationMessage });
                 activeRowWarningString = `Sensor Fault State Code ${status}`;
