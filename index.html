@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Challenge Pulse Oximeter | Group 8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-active .accordion-content { max-height: 1200px; transition: max-height 0.5s ease-in; }
+        .accordion-btn svg { transition: transform 0.3s; }
+        .accordion-active .accordion-btn svg { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col justify-between">
+
+    <header class="border-b border-slate-800 bg-slate-950/50 backdrop-blur px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="h-3 w-3 rounded-full bg-cyan-500 animate-pulse"></div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-100 uppercase">
+                PULSE-QUEST <span class="text-xs text-cyan-400 font-semibold normal-case tracking-normal">Design Challenge Pulse Oximeter / Group 8 2026</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="tabDashboard" class="text-sm font-semibold text-cyan-400 border-b-2 border-cyan-400 pb-1 px-2 transition-all">Dashboard</button>
+            <button id="tabDocs" class="text-sm font-semibold text-slate-400 hover:text-slate-200 pb-1 px-2 transition-all">Diagnostic Glossary Page</button>
+            <button id="connectBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-4 py-1.5 rounded-lg transition-all text-xs ml-2">
+                Connect Sensor
+            </button>
+        </div>
+    </header>
+
+    <main id="dashboardPage" class="max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 flex-grow">
+        
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            
+            <div id="warningPanel" class="bg-slate-950 border border-slate-800 rounded-2xl p-5 hidden flex-col gap-3 shadow-xl">
+                <span class="text-xs font-semibold tracking-wider text-amber-500 uppercase flex items-center gap-2">
+                    ⚠️ Active System Diagnostics & Clinical Alerts
+                </span>
+                <div id="warningContainer" class="flex flex-col gap-2 mt-2"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold tracking-wider text-rose-400 uppercase">Heart Rate</span>
+                            <span id="screenIndicatorHR" class="text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md font-medium tracking-wide">
+                                Checking Stream...
+                            </span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <span id="hrValue" class="text-7xl font-black tracking-tighter">--</span>
+                            <span class="text-slate-400 font-medium">BPM</span>
+                        </div>
+                        
+                        <div class="mt-4 relative pt-4">
+                            <div class="h-2 w-full rounded-full" style="background: linear-gradient(to right, #ef4444 0%, #f59e0b 20%, #22c55e 35%, #22c55e 65%, #f59e0b 80%, #ef4444 100%);"></div>
+                            <div id="hrArrow" class="absolute top-1.5 transition-all duration-300 transform -translate-x-1/2" style="left: 50%;">
+                                <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-white"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
+                                <span>&le;59 (Low)</span>
+                                <span>60 - 100 (Normal Resting Range)</span>
+                                <span>101+ (High)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 border-t border-slate-900 pt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Hardware LED 1 (Yellow): <span id="ledYellowStatus" class="text-slate-400">OFF</span></span>
+                        <span class="text-rose-500 text-base animate-bounce">♥</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold tracking-wider text-sky-400 uppercase">Oxygen Saturation</span>
+                            <span id="screenIndicatorO2" class="text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md font-medium tracking-wide">
+                                Checking Stream...
+                            </span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <span id="spo2Value" class="text-7xl font-black tracking-tighter">--</span>
+                            <span class="text-slate-400 font-medium">%</span>
+                        </div>
+
+                        <div class="mt-4 relative pt-4">
+                            <div class="h-2 w-full rounded-full bg-gradient-to-r from-red-600 via-orange-500 via-yellow-400 to-sky-400"></div>
+                            <div id="o2Arrow" class="absolute top-1.5 transition-all duration-300 transform -translate-x-1/2" style="left: 95%;">
+                                <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-white"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
+                                <span>&le;85 (Severe)</span>
+                                <span>95 (Borderline)</span>
+                                <span>100 (Optimal)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 border-t border-slate-900 pt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Hardware LED 2 (Blue): <span id="ledBlueStatus" class="text-slate-400">OFF</span></span>
+                        <span class="text-sky-400 text-sm font-bold inline-block animate-bounce">O₂</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl h-64 flex flex-col">
+                <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-4">Live Pulse Analytics Graph</span>
+                <div class="relative w-full flex-grow">
+                    <canvas id="liveChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400">
+                <div class="flex flex-col gap-1">
+                    <span class="text-slate-500 font-semibold uppercase tracking-wider">Sensor Confidence</span>
+                    <span id="confidenceValue" class="text-base font-bold text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span class="text-slate-500 font-semibold uppercase tracking-wider">Biometric Status Code</span>
+                    <span id="statusCodeValue" class="text-base font-bold text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span class="text-slate-500 font-semibold uppercase tracking-wider">Hardware LED 3 (Red)</span>
+                    <span id="ledRedStatus" class="text-base font-bold text-slate-400">OFF</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-xl min-h-[400px]">
+            <div class="flex flex-col h-full">
+                <div class="flex justify-between items-center border-b border-slate-900 pb-3 mb-3">
+                    <span class="text-xs font-semibold tracking-wider text-cyan-400 uppercase">Patient Ledger History</span>
+                    <span id="ledgerCounter" class="text-[10px] bg-slate-900 px-2 py-0.5 rounded-full text-slate-400 font-mono">0 rows</span>
+                </div>
+                
+                <div class="flex-grow overflow-y-auto max-h-[480px] text-left pr-1" id="ledgerScrollFrame">
+                    <table class="w-full text-xs font-mono">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-900">
+                                <th class="pb-2 font-normal text-left">Time</th>
+                                <th class="pb-2 font-normal text-center">BPM</th>
+                                <th class="pb-2 font-normal text-center">SpO2</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <button id="downloadBtn" class="mt-4 w-full bg-slate-900 hover:bg-slate-800 text-cyan-400 font-semibold border border-cyan-900/50 py-2 rounded-lg text-xs tracking-wider transition-all uppercase">
+                Export Data (.CSV)
+            </button>
+        </div>
+    </main>
+
+    <main id="docsPage" class="max-w-7xl w-full mx-auto p-6 flex-grow hidden flex-col gap-6 text-left">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div>
+                <h2 class="text-xl font-bold text-cyan-400 mb-1">System Diagnostics Glossary Reference</h2>
+                <p class="text-sm text-slate-400 mb-4">Click any section header below to expand technical parameters and baseline metrics.</p>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/20">
+                <button class="w-full text-left p-4 font-semibold text-base flex justify-between items-center hover:bg-slate-900/50 transition-all accordion-btn" onclick="toggleAccordion(this)">
+                    <span class="flex items-center gap-3 text-slate-200">
+                        <span>🚨</span>
+                        <span>1. Hardware Physical LED Operation Mapping</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="p-4 pt-2 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-900/60 mt-2">
+                        <div class="bg-slate-950/50 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-1">
+                            <span class="text-xs font-bold tracking-wider text-amber-400 uppercase">Yellow LED</span>
+                            <span class="text-slate-200 font-semibold text-xs">High HR Trigger</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Lights up instantly when the calculated heart rate matches or crosses above 100 BPM. Flags potential tachycardia states or heavy cardiovascular exertion.</p>
+                        </div>
+                        <div class="bg-slate-950/50 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-1">
+                            <span class="text-xs font-bold tracking-wider text-sky-400 uppercase">Blue LED</span>
+                            <span class="text-slate-200 font-semibold text-xs">Display Mode Toggle Status</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Indicates which biometric value is actively being pushed to the physical screen on the hardware module. When lit, the device shows SpO2; when dark, it tracks Heart Rate.</p>
+                        </div>
+                        <div class="bg-slate-950/50 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-1">
+                            <span class="text-xs font-bold tracking-wider text-rose-400 uppercase">Red LED</span>
+                            <span class="text-slate-200 font-semibold text-xs">Signal Quality Error Fault</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Lights up when finger contact is insecure. Activated if the status code drops below 3 and tracking confidence dips below 95%.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/20">
+                <button class="w-full text-left p-4 font-semibold text-base flex justify-between items-center hover:bg-slate-900/50 transition-all accordion-btn" onclick="toggleAccordion(this)">
+                    <span class="flex items-center gap-3 text-slate-200">
+                        <span>🔍</span>
+                        <span>2. Biometric Status Code Dictionary</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="p-4 pt-0 text-sm text-slate-300 space-y-3 border-t border-slate-900/60 mt-2 font-mono">
+                        <div><span class="text-emerald-400 font-bold">Status 3 (Fully Operational):</span> Optical channels securely locked onto arterial pulse flow.</div>
+                        <div><span class="text-amber-400 font-bold">Status 2 (Acquiring Vitals Pulse):</span> Scanner searching for rhythmic spikes to calibrate standard reading data.</div>
+                        <div><span class="text-orange-400 font-bold">Status 1 (Poor Alignment / High Noise):</span> Reading drift caused by excessive light leaks or sudden user movement.</div>
+                        <div><span class="text-red-400 font-bold">Status 0 (No Contact Detected):</span> Absolute dropout. Finger completely detached from photodiode interface.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/20">
+                <button class="w-full text-left p-4 font-semibold text-base flex justify-between items-center hover:bg-slate-900/50 transition-all accordion-btn" onclick="toggleAccordion(this)">
+                    <span class="flex items-center gap-3 text-slate-200">
+                        <span>📈</span>
+                        <span>3. Clinical Warning Thresholds</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="p-4 pt-0 text-sm border-t border-slate-900/60 mt-2">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-900">
+                                    <th class="py-2 font-semibold">Alert Condition</th>
+                                    <th class="py-2 font-semibold">Triggers Bounds</th>
+                                    <th class="py-2 font-semibold">Clinical Priority Context Explanations</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-900 text-slate-300">
+                                <tr>
+                                    <td class="py-2 font-semibold text-amber-400">High Heart Rate</td>
+                                    <td class="py-2 font-mono">=&gt; 100 BPM</td>
+                                    <td class="py-2 text-slate-400">Flags tachycardia. Can be caused by exercise, anxiety, fever, or stress.</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 font-semibold text-orange-400">Low Heart Rate</td>
+                                    <td class="py-2 font-mono">&lt; 60 BPM</td>
+                                    <td class="py-2 text-slate-400">Flags bradycardia. Normal in well-trained resting athletes, but requires evaluation if paired with dizziness.</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 font-semibold text-red-500">Hypoxic Condition</td>
+                                    <td class="py-2 font-mono">&lt; 95%</td>
+                                    <td class="py-2 text-slate-400">Low blood oxygen saturation indicates inadequate cell ventilation. Requires prompt attention.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/20">
+                <button class="w-full text-left p-4 font-semibold text-base flex justify-between items-center hover:bg-slate-900/50 transition-all accordion-btn" onclick="toggleAccordion(this)">
+                    <span class="flex items-center gap-3 text-slate-200">
+                        <span>❤️‍🩹</span>
+                        <span>4. Medical Diagnostics Reference (Age & Activity Variables)</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="p-4 pt-0 text-sm text-slate-300 space-y-4 border-t border-slate-900/60 mt-2">
+                        <div>
+                            <h4 class="text-slate-200 font-bold mb-2">Normal Resting Baselines by Demographic Group:</h4>
+                            <table class="w-full text-left border-collapse font-mono bg-slate-950/40 rounded-lg overflow-hidden text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="text-slate-500 bg-slate-950 border-b border-slate-900">
+                                        <th class="p-2">Demographic Bracket</th>
+                                        <th class="p-2">Normal Resting Heart Rate</th>
+                                        <th class="p-2">Normal SpO2 Baseline</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-900 text-slate-400">
+                                    <tr><td class="p-2">Infants (1-11 Months)</td><td class="p-2">80 - 160 BPM</td><td class="p-2">95% - 100%</td></tr>
+                                    <tr><td class="p-2">Children (1-9 Years)</td><td class="p-2">70 - 120 BPM</td><td class="p-2">95% - 100%</td></tr>
+                                    <tr><td class="p-2">Adults & Adolescents (10+ Years)</td><td class="p-2">60 - 100 BPM</td><td class="p-2">95% - 100%</td></tr>
+                                    <tr><td class="p-2">Athletes / Highly Fit Individuals</td><td class="p-2">40 - 60 BPM</td><td class="p-2">95% - 100%</td></tr>
+                                    <tr><td class="p-2">Seniors (Ages 70+)</td><td class="p-2">60 - 100 BPM</td><td class="p-2">95% - 97%</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="space-y-4 pt-2">
+                            <div class="bg-slate-950/30 border border-slate-800 p-4 rounded-xl">
+                                <span class="font-bold text-cyan-400 block mb-1">Dynamic Exercise Target Zones</span>
+                                During vigorous cardiovascular movement, a person's safe target heart rate typically scales up to 60% to 85% of their theoretical maximum heart rate (calculated roughly as 220 - age). SpO2 metrics should stay steady above 95% during healthy exertion; dynamic drops highlight lower physical conditioning.
+                            </div>
+                            
+                            <div class="bg-slate-950/30 border border-slate-800 p-4 rounded-xl space-y-3">
+                                <span class="font-bold text-amber-400 block">Severity Scale & When to Worry</span>
+                                <div class="border-l-2 border-slate-700 pl-3">
+                                    <span class="font-bold text-slate-200 block">Mild Variance:</span>
+                                    Heart rate 101-110 (at rest, could be due to caffeine or mild stress); SpO2 at 93%-94% (monitor closely, limit movement exertion).
+                                </div>
+                                <div class="border-l-2 border-rose-600 pl-3">
+                                    <span class="font-bold text-rose-400 block">Severe / Critical:</span>
+                                    Resting heart rate persistently above 120 or below 50 accompanied by fainting/fatigue. SpO2 below 92% is a direct critical danger signal requiring immediate evaluation.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-950 border-t border-slate-800 px-6 py-3 text-xs text-slate-500 flex justify-between">
+        <span>Hardware Architecture: Arduino Nano & MAX30101 Optical Sensor Array</span>
+        <span id="connectionState" class="cursor-pointer hover:text-slate-300 transition-all underline decoration-dotted">Disconnected</span>
+    </footer>
+
+    <script>
+        let port; let reader; let simulationInterval; let keepReading = true;
+        let ledgerHistoryData = []; let lastLedgerLogTime = 0;   
+        
+        const tabDashboard = document.getElementById('tabDashboard');
+        const tabDocs = document.getElementById('tabDocs');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const docsPage = document.getElementById('docsPage');
+
+        const connectBtn = document.getElementById('connectBtn');
+        const hrValue = document.getElementById('hrValue');
+        const spo2Value = document.getElementById('spo2Value');
+        const confidenceValue = document.getElementById('confidenceValue');
+        const statusCodeValue = document.getElementById('statusCodeValue');
+        const connectionState = document.getElementById('connectionState');
+        const warningPanel = document.getElementById('warningPanel');
+        const warningContainer = document.getElementById('warningContainer');
+        const ledgerBody = document.getElementById('ledgerBody');
+        const ledgerCounter = document.getElementById('ledgerCounter');
+        const ledgerScrollFrame = document.getElementById('ledgerScrollFrame');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        const ledRedStatus = document.getElementById('ledRedStatus');
+        const ledBlueStatus = document.getElementById('ledBlueStatus');
+        const ledYellowStatus = document.getElementById('ledYellowStatus');
+
+        const screenIndicatorHR = document.getElementById('screenIndicatorHR');
+        const screenIndicatorO2 = document.getElementById('screenIndicatorO2');
+        const hrArrow = document.getElementById('hrArrow');
+        const o2Arrow = document.getElementById('o2Arrow');
+
+        // Navigation Tabs
+        tabDashboard.addEventListener('click', () => {
+            dashboardPage.classList.replace('hidden', 'grid');
+            docsPage.classList.replace('flex', 'hidden');
+            tabDashboard.className = "text-sm font-semibold text-cyan-400 border-b-2 border-cyan-400 pb-1 px-2 transition-all";
+            tabDocs.className = "text-sm font-semibold text-slate-400 hover:text-slate-200 pb-1 px-2 transition-all";
+        });
+        tabDocs.addEventListener('click', () => {
+            dashboardPage.classList.replace('grid', 'hidden');
+            docsPage.classList.replace('hidden', 'flex');
+            tabDocs.className = "text-sm font-semibold text-cyan-400 border-b-2 border-cyan-400 pb-1 px-2 transition-all";
+            tabDashboard.className = "text-sm font-semibold text-slate-400 hover:text-slate-200 pb-1 px-2 transition-all";
+        });
+
+        function toggleAccordion(buttonElement) {
+            buttonElement.parentElement.classList.toggle('accordion-active');
+        }
+
+        const ctx = document.getElementById('liveChart').getContext('2d');
+        const maxGraphPointsCount = 40;
+        const liveChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(maxGraphPointsCount).fill(''), 
+                datasets: [{
+                    label: 'Live Pulse Analytics Graph',
+                    data: Array(maxGraphPointsCount).fill(null),
+                    borderColor: 'rgb(244, 63, 94)',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    pointRadius: 0,
+                    fill: true,
+                    backgroundColor: 'rgba(244, 63, 94, 0.03)'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false,
+                scales: {
+                    y: { min: 40, max: 140, grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        connectBtn.addEventListener('click', async () => {
+            if (simulationInterval || port) {
+                disconnectDeviceCleanup();
+                return;
+            }
+
+            if ('serial' in navigator) {
+                try {
+                    port = await navigator.serial.requestPort();
+                    await port.open({ baudRate: 115200 }); 
+                    
+                    connectBtn.textContent = "Disconnect Sensor";
+                    connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
+                    connectBtn.classList.replace('hover:bg-cyan-500', 'hover:bg-red-500');
+                    connectionState.textContent = "Streaming Live Telemetry...";
+                    
+                    keepReading = true;
+                    const textDecoder = new TextDecoderStream();
+                    port.readable.pipeTo(textDecoder.writable);
+                    reader = textDecoder.readable.getReader();
+                    readLoop();
+                } catch (err) { alert("Failed to connect via Serial."); }
+            } else { alert("Please use desktop Google Chrome or Microsoft Edge."); }
+        });
+
+        function disconnectDeviceCleanup() {
+            if (simulationInterval) { clearInterval(simulationInterval); simulationInterval = null; }
+            if (reader) {
+                keepReading = false;
+                reader.cancel().catch(() => {});
+                reader = null;
+            }
+            if (port) {
+                port.close().catch(() => {});
+                port = null;
+            }
+
+            connectBtn.textContent = "Connect Sensor";
+            connectBtn.className = "bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-4 py-1.5 rounded-lg transition-all text-xs ml-2";
+            connectionState.textContent = "Disconnected";
+            
+            hrValue.textContent = "--"; spo2Value.textContent = "--";
+            confidenceValue.textContent = "--"; statusCodeValue.textContent = "--";
+            warningPanel.classList.replace('flex', 'hidden'); ledgerBody.innerHTML = "";
+            ledgerHistoryData = []; ledgerCounter.textContent = "0 rows";
+            hrArrow.style.left = "50%"; o2Arrow.style.left = "95%";
+            ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
+            ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
+            ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
+            screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+            screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+        }
+
+        connectionState.addEventListener('click', () => {
+            if (simulationInterval || port) { disconnectDeviceCleanup(); return; }
+
+            connectionState.textContent = "Running Mock Simulation... Click to stop.";
+            connectBtn.textContent = "Disconnect Sensor";
+            connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
+            
+            simulationInterval = setInterval(() => {
+                const rng = Math.random();
+                let sHR, sO2, sConf, sStatus, sScreen;
+                if(rng < 0.12) { sHR = 72; sO2 = 0; sConf = 84; sStatus = 1; sScreen = 0; } 
+                else if (rng > 0.88) { sHR = 112; sO2 = 91; sConf = 98; sStatus = 3; sScreen = 1; } 
+                else { 
+                    sHR = Math.floor(Math.random() * (85 - 65 + 1)) + 65; 
+                    sO2 = Math.floor(Math.random() * (100 - 97 + 1)) + 97; 
+                    sConf = Math.floor(Math.random() * (100 - 96 + 1)) + 96; 
+                    sStatus = 3; 
+                    sScreen = Math.random() > 0.5 ? 1 : 0;
+                }
+                processMetricsPipeline(sHR, sO2, sConf, sStatus, sScreen);
+            }, 1000); 
+        });
+
+        function processMetricsPipeline(hr, o2, confidence, status, screenMode) {
+            confidenceValue.textContent = confidence + "%";
+            statusCodeValue.textContent = status;
+            hrValue.textContent = hr;
+            spo2Value.textContent = o2;
+
+            let hrPercentPosition = ((hr - 40) / (120 - 40)) * 100;
+            hrPercentPosition = Math.max(0, Math.min(100, hrPercentPosition));
+            if(hr > 0) hrArrow.style.left = hrPercentPosition + "%";
+
+            let o2PercentPosition = ((o2 - 80) / (100 - 80)) * 100;
+            o2PercentPosition = Math.max(0, Math.min(100, o2PercentPosition));
+            if(o2 > 0) o2Arrow.style.left = o2PercentPosition + "%";
+
+            let clinicalAlertsList = [];
+            let activeRowWarningString = "System Nominal";
+
+            if (status !== 3 && confidence <= 95) {
+                ledRedStatus.textContent = "ON (Sensor Fault Detected)";
+                ledRedStatus.className = "text-base font-bold text-rose-500 animate-pulse";
+
+                let statusExplanationMessage = "";
+                if (status === 2) statusExplanationMessage = "SENSOR WARNING (Status 2): Device searching for clear vital rhythms. Keep finger resting steadily.";
+                else if (status === 1) statusExplanationMessage = "SENSOR WARNING (Status 1): High signal noise detected. Ambient light leak or movement artifacts active.";
+                else statusExplanationMessage = "SENSOR WARNING (Status 0): Optical circuit path registering absolute dropout. Finger detached completely.";
+
+                clinicalAlertsList.push({ type: 'error', msg: statusExplanationMessage });
+                activeRowWarningString = `Sensor Fault State Code ${status}`;
+
+                ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
+                ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
+                screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+                screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+            } else {
+                ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
+
+                if (screenMode === 1) {
+                    ledBlueStatus.textContent = "ON (SpO2 View Mode active)";
+                    ledBlueStatus.className = "text-sm font-medium text-sky-400";
+                    screenIndicatorO2.textContent = "Displaying on Hardware Screen";
+                    screenIndicatorO2.className = "text-[10px] bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
+                    screenIndicatorHR.textContent = "Hidden on Hardware Screen";
+                    screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+                } else {
+                    ledBlueStatus.textContent = "OFF (Heart Rate View Mode active)";
+                    ledBlueStatus.className = "text-sm font-medium text-slate-400";
+                    screenIndicatorHR.textContent = "Displaying on Hardware Screen";
+                    screenIndicatorHR.className = "text-[10px] bg-rose-950/60 text-rose-300 border border-rose-800/50 px-2 py-0.5 rounded-md font-medium tracking-wide";
+                    screenIndicatorO2.textContent = "Hidden on Hardware Screen";
+                    screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+                }
+
+                if(hr > 0) {
+                    liveChart.data.datasets[0].data.push(hr);
+                    liveChart.data.datasets[0].data.shift();
+                    liveChart.update();
+                }
+
+                if (hr >= 100) {
+                    ledYellowStatus.textContent = "ON (High HR Triggered)"; 
+                    ledYellowStatus.className = "text-sm font-medium text-amber-400";
+                } else {
+                    ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-sm font-medium text-slate-400";
+                }
+
+                if (o2 < 95 && o2 > 0) {
+                    clinicalAlertsList.push({ type: 'danger', msg: `CRITICAL RESPIRATORY ALERT: Hypoxic conditions detected! Oxygen saturation at ${o2}% is below optimal cell ventilation parameters.` });
+                    activeRowWarningString = "CRITICAL HYPOXIA ALERT";
+                }
+                if (hr >= 100) {
+                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Elevated Tachycardia Threshold detected. Current reading: ${hr} BPM exceeds healthy baseline limits.` });
+                    if(activeRowWarningString === "System Nominal") activeRowWarningString = "Tachycardia Check Flag";
+                }
+                if (hr < 60 && hr > 0) {
+                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Bradycardia limit crossed. Current pulse velocity tracking at ${hr} BPM is below normal bounds.` });
+                    if(activeRowWarningString === "System Nominal") activeRowWarningString = "Bradycardia Check Flag";
+                }
+            }
+
+            if(clinicalAlertsList.length > 0) {
+                warningPanel.classList.replace('hidden', 'flex'); warningContainer.innerHTML = ""; 
+                clinicalAlertsList.forEach(item => {
+                    const div = document.createElement('div');
+                    if(item.type === 'error') div.className = "bg-amber-950/40 border border-amber-500 text-amber-300 px-4 py-2 rounded-xl text-xs font-semibold";
+                    else if (item.type === 'danger') div.className = "bg-rose-950/50 border border-rose-600 text-rose-300 px-4 py-2 rounded-xl text-xs font-semibold animate-pulse";
+                    else div.className = "bg-orange-950/40 border border-orange-500 text-orange-300 px-4 py-2 rounded-xl text-xs font-semibold";
+                    div.textContent = item.msg; warningContainer.appendChild(div);
+                });
+            } else { warningPanel.classList.replace('flex', 'hidden'); }
+
+            let currentTimeStamp = Date.now();
+            if(currentTimeStamp - lastLedgerLogTime >= 5000 && (hr > 0 || o2 > 0)) {
+                let localTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                let vitalSnapshotObject = { time: localTimeString, bpm: hr, spo2: o2, diagLog: activeRowWarningString };
+                ledgerHistoryData.push(vitalSnapshotObject);
+                ledgerCounter.textContent = `${ledgerHistoryData.length} rows`;
+                const tableRow = document.createElement('tr');
+                tableRow.className = "border-b border-slate-900/50 hover:bg-slate-900/30 text-slate-300";
+                let alertHighlightClass = activeRowWarningString !== "System Nominal" ? "text-amber-400 font-bold" : "text-slate-300";
+                tableRow.innerHTML = `<td class="py-2 text-left text-slate-500">${vitalSnapshotObject.time}</td><td class="py-2 text-center text-rose-400 font-bold ${alertHighlightClass}">${vitalSnapshotObject.bpm}</td><td class="py-2 text-center text-sky-400 font-bold ${alertHighlightClass}">${vitalSnapshotObject.spo2}%</td>`;
+                ledgerBody.appendChild(tableRow); ledgerScrollFrame.scrollTop = ledgerScrollFrame.scrollHeight; lastLedgerLogTime = currentTimeStamp;
+            }
+        }
+
+        async function readLoop() {
+            let buffer = "";
+            while (keepReading) {
+                try {
+                    const { value, done } = await reader.read();
+                    if (done || !keepReading) { if(reader) reader.releaseLock(); break; }
+                    buffer += value; let lines = buffer.split("\n"); buffer = lines.pop();
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.includes("HR:") && line.includes("SpO2:") && line.includes("Confidence:") && line.includes("Status:")) {
+                            try {
+                                const sectors = line.split("|");
+                                const pHR = sectors[0].replace("HR:", "").trim(); 
+                                const pO2 = sectors[1].replace("SpO2:", "").trim();
+                                const pConf = sectors[2].replace("Confidence:", "").trim(); 
+                                const pStatus = sectors[3].replace("Status:", "").trim();
+                                
+                                let pScreen = 0;
+                                if (sectors[4] && sectors[4].includes("ScreenMode:")) {
+                                    pScreen = parseInt(sectors[4].replace("ScreenMode:", "").trim());
+                                } else {
+                                    pScreen = Math.random() > 0.5 ? 1 : 0; 
+                                }
+                                
+                                processMetricsPipeline(parseInt(pHR), parseInt(pO2), parseInt(pConf), parseInt(pStatus), pScreen);
+                            } catch(e) {}
+                        }
+                    }
+                } catch(err) { break; }
+            }
+        }
+    </script>
+</body>
+</html>
