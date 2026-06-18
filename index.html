@@ -573,17 +573,25 @@
                     ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-sm font-medium text-slate-400";
                 }
 
+                let clinicalAlertsActive = [];
+                
                 if (o2 < 95 && o2 > 0) {
                     clinicalAlertsList.push({ type: 'danger', msg: `CRITICAL RESPIRATORY ALERT: Hypoxic conditions detected! Oxygen saturation at ${o2}% is below optimal cell ventilation parameters.` });
-                    activeRowWarningString = "CRITICAL HYPOXIA ALERT";
+                    clinicalAlertsActive.push("CRITICAL HYPOXIA ALERT");
                 }
                 if (hr >= 100) {
                     clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Elevated Tachycardia Threshold detected. Current reading: ${hr} BPM exceeds healthy baseline limits.` });
-                    if(activeRowWarningString === "System Nominal") activeRowWarningString = "Tachycardia Check Flag";
+                    clinicalAlertsActive.push("Tachycardia Check Flag");
                 }
                 if (hr < 60 && hr > 0) {
                     clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Bradycardia limit crossed. Current pulse velocity tracking at ${hr} BPM is below normal bounds.` });
-                    if(activeRowWarningString === "System Nominal") activeRowWarningString = "Bradycardia Check Flag";
+                    clinicalAlertsActive.push("Bradycardia Check Flag");
+                }
+
+                if (clinicalAlertsActive.length > 0){
+                    activeRowWarningString = clinicalAlertsActive.join(" & ");
+                } else{
+                    activeRowWarningString = "System Nominal";
                 }
             }
 
