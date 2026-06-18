@@ -465,8 +465,25 @@
         function processMetricsPipeline(hr, o2, confidence, status, screenMode) {
             confidenceValue.textContent = confidence + "%";
             statusCodeValue.textContent = status;
-            hrValue.textContent = hr;
-            spo2Value.textContent = o2;
+
+            // Smart filter: If values are 0 due to a fault or low confidence, display a pulsing "Loading..." status instead of a raw 0
+            // Independent heart rate card filter
+            if ((status !== 3 || confidence <= 95) && hr === 0){
+                hrValue.textContent = "Loading...";
+                hrValue.className = "text-3xl font-bold tracking-tight text-slate-400 animate-pulse py-4";
+            }else{
+                hrValue.textContent = hr;
+                hrValue.className = "text-7xl font-black tracking-tighter text-white";
+            }
+
+            // Independent SpO2 card filter
+            if ((status !== 3 || confidence <= 95) && o2 === 0){
+                spo2Value.textContent = "Loading...";
+                spo2Value.className = "text-3xl font-bold tracking-tight text-slate-400 animate-pulse py-4";
+            }else{
+                spo2Value.textContent = o2;
+                spo2Value.className = "text-7xl font-black tracking-tighter text-white";
+            }
 
             let hrPercentPosition = ((hr - 40) / (120 - 40)) * 100;
             hrPercentPosition = Math.max(0, Math.min(100, hrPercentPosition));
