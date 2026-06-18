@@ -306,8 +306,8 @@
     </main>
 
     <footer class="bg-slate-950 border-t border-slate-800 px-6 py-3 text-xs text-slate-500 flex justify-between">
-        <span>Hardware Architecture: Arduino Nano & MAX30101 Optical Sensor Array</span>
-        <span id="connectionState" class="cursor-pointer hover:text-slate-300 transition-all underline decoration-dotted">Disconnected</span>
+        <span>Hardware Architecture: Arduino Nano 33 IoT & MAX32664 Biometric Sensor</span>
+        <span id="connectionState" class="cursor-pointer hover:text-cyan-400 transition-all underline decoration-dotted">Simulate System Data</span>
     </footer>
 
     <script>
@@ -446,6 +446,11 @@
         connectionState.addEventListener('click', () => {
             if (simulationInterval || port) { disconnectDeviceCleanup(); return; }
 
+            //clear ledger on simulation start
+            ledgerBody.innerHTML = "";
+            ledgerHistoryData = [];
+            ledgerCounter.textContent = "0 rows";
+            
             connectionState.textContent = "Running Mock Simulation... Click to stop.";
             connectBtn.textContent = "Disconnect Sensor";
             connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
