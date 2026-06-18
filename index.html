@@ -396,7 +396,10 @@
                 try {
                     port = await navigator.serial.requestPort();
                     await port.open({ baudRate: 115200 }); 
-                    
+
+                    ledgerBody.innerHTML = "";
+                    ledgerHistoryData = [];
+                    ledgerCounter.textContent = "0 rows";
                     connectBtn.textContent = "Disconnect Sensor";
                     connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
                     connectBtn.classList.replace('hover:bg-cyan-500', 'hover:bg-red-500');
@@ -429,14 +432,15 @@
             
             hrValue.textContent = "--"; spo2Value.textContent = "--";
             confidenceValue.textContent = "--"; statusCodeValue.textContent = "--";
-            warningPanel.classList.replace('flex', 'hidden'); ledgerBody.innerHTML = "";
-            ledgerHistoryData = []; ledgerCounter.textContent = "0 rows";
+            warningPanel.classList.replace('flex', 'hidden'); 
             hrArrow.style.left = "50%"; o2Arrow.style.left = "95%";
             ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
             ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
             ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
             screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
             screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+            liveChart.data.datasets[0].data = Array(maxGraphPointsCount).fill(null);
+            liveChart.update();
         }
 
         connectionState.addEventListener('click', () => {
