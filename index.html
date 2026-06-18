@@ -499,14 +499,9 @@
             if(hr > 0) hrArrow.style.left = hrPercentPosition + "%";
 
             // Visual mapping to custom slider ranges
-            let o2PercentPosition = 0;
-            if (o2 <= 85) {
-                o2PercentPosition = 10;
-            } else if (o2 <= 94) {
-                o2PercentPosition = 10 + ((o2 - 85) / (94 - 85)) * 40;
-            } else {
-                o2PercentPosition = 50 + ((o2 - 94) / (100 - 94)) * 40;
-            }
+            const minVisibleO2 = 75;
+            const maxVisibleO2 = 100;
+            let o2PercentPosition = ((o2 - minVisibleO2)/(maxVisibleO2 - minVisibleO2))*100;
             o2PercentPosition = Math.max(0, Math.min(100, o2PercentPosition));
             if(o2 > 0) o2Arrow.style.left = o2PercentPosition + "%";
 
