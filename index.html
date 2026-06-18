@@ -65,7 +65,7 @@
                             <div class="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
                                 <span>&le;59 (Low)</span>
                                 <span>60 - 100 (Normal Resting Range)</span>
-                                <span>>100 (High)</span>
+                                <span>101+ (High)</span>
                             </div>
                         </div>
                     </div>
@@ -306,7 +306,7 @@
     </main>
 
     <footer class="bg-slate-950 border-t border-slate-800 px-6 py-3 text-xs text-slate-500 flex justify-between">
-        <span>Hardware Architecture: Arduino Nano 33 IoT & MAX32664 Biometric Sensor</span>
+        <span>Hardware Architecture: Arduino Nano & MAX30102 Optical Sensor Array</span>
         <span id="connectionState" class="cursor-pointer hover:text-cyan-400 transition-all underline decoration-dotted">Simulate System Data</span>
     </footer>
 
@@ -396,14 +396,15 @@
                 try {
                     port = await navigator.serial.requestPort();
                     await port.open({ baudRate: 115200 }); 
-
+                    
                     ledgerBody.innerHTML = "";
-                    ledgerHistoryData = [];
+                    ledgerHistoryData = []; 
                     ledgerCounter.textContent = "0 rows";
+
                     connectBtn.textContent = "Disconnect Sensor";
                     connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
                     connectBtn.classList.replace('hover:bg-cyan-500', 'hover:bg-red-500');
-                    connectionState.textContent = "Streaming Live Telemetry...";
+                    connectionState.textContent = "Simulation Active (Click to Stop)";
                     
                     keepReading = true;
                     const textDecoder = new TextDecoderStream();
@@ -428,17 +429,20 @@
 
             connectBtn.textContent = "Connect Sensor";
             connectBtn.className = "bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-4 py-1.5 rounded-lg transition-all text-xs ml-2";
+            
             connectionState.textContent = "Simulate System Data";
             
             hrValue.textContent = "--"; spo2Value.textContent = "--";
             confidenceValue.textContent = "--"; statusCodeValue.textContent = "--";
             warningPanel.classList.replace('flex', 'hidden'); 
+            
             hrArrow.style.left = "50%"; o2Arrow.style.left = "95%";
             ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
             ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
             ledBlueStatus.textContent = "OFF"; ledBlueStatus.className = "text-sm font-medium text-slate-400";
             screenIndicatorHR.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
             screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
+
             liveChart.data.datasets[0].data = Array(maxGraphPointsCount).fill(null);
             liveChart.update();
         }
@@ -446,12 +450,11 @@
         connectionState.addEventListener('click', () => {
             if (simulationInterval || port) { disconnectDeviceCleanup(); return; }
 
-            //clear ledger on simulation start
             ledgerBody.innerHTML = "";
-            ledgerHistoryData = [];
+            ledgerHistoryData = []; 
             ledgerCounter.textContent = "0 rows";
-            
-            connectionState.textContent = "Running Mock Simulation... Click to stop.";
+
+            connectionState.textContent = "Simulation Active (Click to Stop)";
             connectBtn.textContent = "Disconnect Sensor";
             connectBtn.classList.replace('bg-cyan-600', 'bg-red-600');
             
@@ -475,21 +478,18 @@
             confidenceValue.textContent = confidence + "%";
             statusCodeValue.textContent = status;
 
-            // Smart filter: If values are 0 due to a fault or low confidence, display a pulsing "Loading..." status instead of a raw 0
-            // Independent heart rate card filter
-            if ((status !== 3 || confidence <= 95) && hr === 0){
+            if ((status !== 3 || confidence <= 95) && hr === 0) {
                 hrValue.textContent = "Loading...";
                 hrValue.className = "text-3xl font-bold tracking-tight text-slate-400 animate-pulse py-4";
-            }else{
+            } else {
                 hrValue.textContent = hr;
                 hrValue.className = "text-7xl font-black tracking-tighter text-white";
             }
 
-            // Independent SpO2 card filter
-            if ((status !== 3 || confidence <= 95) && o2 === 0){
+            if ((status !== 3 || confidence <= 95) && o2 === 0) {
                 spo2Value.textContent = "Loading...";
                 spo2Value.className = "text-3xl font-bold tracking-tight text-slate-400 animate-pulse py-4";
-            }else{
+            } else {
                 spo2Value.textContent = o2;
                 spo2Value.className = "text-7xl font-black tracking-tighter text-white";
             }
@@ -498,29 +498,27 @@
             hrPercentPosition = Math.max(0, Math.min(100, hrPercentPosition));
             if(hr > 0) hrArrow.style.left = hrPercentPosition + "%";
 
+            // Visual mapping to custom slider ranges
             let o2PercentPosition = 0;
-            if (o2 <=85){
+            if (o2 <= 85) {
                 o2PercentPosition = 10;
-            }else if (o2 <= 94){
-                o2PercentPosition = 10 + ((o2 -85)/(94-85)) * 40;
-            }else{
-                o2PercentPosition = 50 + ((o2 - 94)/(100-94))*40;
+            } else if (o2 <= 94) {
+                o2PercentPosition = 10 + ((o2 - 85) / (94 - 85)) * 40;
+            } else {
+                o2PercentPosition = 50 + ((o2 - 94) / (100 - 94)) * 40;
+            }
             o2PercentPosition = Math.max(0, Math.min(100, o2PercentPosition));
             if(o2 > 0) o2Arrow.style.left = o2PercentPosition + "%";
 
             let clinicalAlertsList = [];
             let activeRowWarningString = "System Nominal";
 
-            // CHECK LOGIC: Trigger warning state if status != 3 OR confidence <= 95 OR an impossible zero drops out
             if (status !== 3 || confidence <= 95 || hr === 0 || o2 === 0) {
-                
-                // Explicitly sync and illuminate the Red Fault LED text dashboard container
                 ledRedStatus.textContent = "ON (Sensor Fault Detected)";
                 ledRedStatus.className = "text-base font-bold text-rose-500 animate-pulse";
 
                 let activeFaultsList = [];
 
-                // 1. Check for Zero Value Dropouts independently
                 if (hr === 0 || o2 === 0) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
@@ -529,7 +527,6 @@
                     activeFaultsList.push("Zero Dropout");
                 }
 
-                // 2. Check the Status Codes independently
                 if (status === 2) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
@@ -550,7 +547,6 @@
                     activeFaultsList.push("Finger Detached");
                 }
 
-                // 3. Check for Low Confidence independently
                 if (confidence <= 95) {
                     clinicalAlertsList.push({ 
                         type: 'error', 
@@ -559,12 +555,31 @@
                     activeFaultsList.push("Low Confidence");
                 }
 
-                // Combine all active faults into a nice summary string for the Ledger row
                 activeRowWarningString = activeFaultsList.length > 0 ? activeFaultsList.join(" + ") : "Sensor Fault Alert";
-
                 ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-slate-400";
             } else {
                 ledRedStatus.textContent = "OFF"; ledRedStatus.className = "text-base font-bold text-slate-400";
+
+                let clinicalAlertsActive = [];
+
+                if (o2 < 95 && o2 > 0) {
+                    clinicalAlertsList.push({ type: 'danger', msg: `CRITICAL RESPIRATORY ALERT: Hypoxic conditions detected! Oxygen saturation at ${o2}% is below optimal cell ventilation parameters.` });
+                    clinicalAlertsActive.push("CRITICAL HYPOXIA");
+                }
+                if (hr >= 100) {
+                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Elevated Tachycardia Threshold detected. Current reading: ${hr} BPM exceeds healthy baseline limits.` });
+                    clinicalAlertsActive.push("TACHYCARDIAC BAND");
+                }
+                if (hr < 60 && hr > 0) {
+                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Bradycardia limit crossed. Current pulse velocity tracking at ${hr} BPM is below normal bounds.` });
+                    clinicalAlertsActive.push("BRADYCARDIA BAND");
+                }
+
+                if (clinicalAlertsActive.length > 0) {
+                    activeRowWarningString = clinicalAlertsActive.join(" & ");
+                } else {
+                    activeRowWarningString = "System Nominal";
+                }
 
                 if (hr >= 100) {
                     ledYellowStatus.textContent = "ON (High HR Triggered)"; 
@@ -572,30 +587,8 @@
                 } else {
                     ledYellowStatus.textContent = "OFF"; ledYellowStatus.className = "text-sm font-medium text-slate-400";
                 }
-
-                let clinicalAlertsActive = [];
-                
-                if (o2 < 95 && o2 > 0) {
-                    clinicalAlertsList.push({ type: 'danger', msg: `CRITICAL RESPIRATORY ALERT: Hypoxic conditions detected! Oxygen saturation at ${o2}% is below optimal cell ventilation parameters.` });
-                    clinicalAlertsActive.push("CRITICAL HYPOXIA ALERT");
-                }
-                if (hr >= 100) {
-                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Elevated Tachycardia Threshold detected. Current reading: ${hr} BPM exceeds healthy baseline limits.` });
-                    clinicalAlertsActive.push("Tachycardia Check Flag");
-                }
-                if (hr < 60 && hr > 0) {
-                    clinicalAlertsList.push({ type: 'warning', msg: `CLINICAL ALERT: Bradycardia limit crossed. Current pulse velocity tracking at ${hr} BPM is below normal bounds.` });
-                    clinicalAlertsActive.push("Bradycardia Check Flag");
-                }
-
-                if (clinicalAlertsActive.length > 0){
-                    activeRowWarningString = clinicalAlertsActive.join(" & ");
-                } else{
-                    activeRowWarningString = "System Nominal";
-                }
             }
 
-            // UNBOUNDED SCREEN MODE TOGGLE LOGIC (Always updates accurate layout, even during 0-value faults)
             if (screenMode === 1) {
                 ledBlueStatus.textContent = "ON (SpO2 View Mode active)";
                 ledBlueStatus.className = "text-sm font-medium text-sky-400";
@@ -612,7 +605,6 @@
                 screenIndicatorO2.className = "text-[10px] bg-slate-900 text-slate-500 border border-slate-800 px-2 py-0.5 rounded-md";
             }
 
-            // Graph engine update check
             if(hr > 0) {
                 liveChart.data.datasets[0].data.push(hr);
                 liveChart.data.datasets[0].data.shift();
@@ -675,6 +667,22 @@
                 } catch(err) { break; }
             }
         }
+
+        // CSV Downloader Tool Block
+        downloadBtn.addEventListener('click', () => {
+            if(ledgerHistoryData.length === 0) { alert("No recorded logging rows found to export."); return; }
+            let csvContentString = "Timestamp,Heart Rate (BPM),Oxygen Saturation (SpO2),Diagnostic System Flags\n";
+            ledgerHistoryData.forEach(row => {
+                csvContentString += `"${row.time}","${row.bpm}","${row.spo2}%","${row.diagLog}"\n`;
+            });
+            const dataBlob = new Blob([csvContentString], { type: 'text/csv;charset=utf-8;' });
+            const temporaryLinkElement = document.createElement('a');
+            temporaryLinkElement.href = URL.createObjectURL(dataBlob);
+            temporaryLinkElement.setAttribute('download', 'PulseQuest_Clinical_Ledger_Export.csv');
+            document.body.appendChild(temporaryLinkElement);
+            temporaryLinkElement.click();
+            document.body.removeChild(temporaryLinkElement);
+        });
     </script>
 </body>
 </html>
